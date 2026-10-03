@@ -139,6 +139,7 @@ if (LLVM_INCLUDE_EXAMPLES)
     flangOmpReport
     flangFeatureList
     flangHLFIRPipelinePlugin
+    flangDirectivesPlugin
     )
 endif ()
 

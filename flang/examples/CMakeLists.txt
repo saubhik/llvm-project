@@ -1,3 +1,4 @@
+add_subdirectory(DirectivesPlugin)
 add_subdirectory(HLFIRPipelinePlugin)
 add_subdirectory(PrintFlangFunctionNames)
 add_subdirectory(FlangOmpReport)
