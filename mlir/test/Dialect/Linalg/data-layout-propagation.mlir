@@ -1224,21 +1224,39 @@ func.func @bubble_up_pack_multiple_different_expanded_dims_through_expand(%arg0:
 
 // -----
 
-func.func @no_bubble_up_pack_outer_dims_permutation_through_expand(%arg0: tensor<32x64xf32>) -> tensor<32x4x2x4x2xf32> {
+func.func @bubble_up_pack_outer_dims_permutation_through_expand(%arg0: tensor<32x64xf32>) -> tensor<32x4x2x4x2xf32> {
   %empty = tensor.empty() : tensor<32x4x2x4x2xf32>
   %expanded = tensor.expand_shape %arg0 [[0, 1], [2]] output_shape [4, 8, 64] : tensor<32x64xf32> into tensor<4x8x64xf32>
   %pack = linalg.pack %expanded outer_dims_perm = [2, 0, 1] inner_dims_pos = [1, 2] inner_tiles = [4, 2] into %empty : tensor<4x8x64xf32> -> tensor<32x4x2x4x2xf32>
   return %pack : tensor<32x4x2x4x2xf32>
 }
+// CHECK-LABEL: func.func @bubble_up_pack_outer_dims_permutation_through_expand(
+// CHECK-SAME:      %[[ARG0:[a-zA-Z0-9]+]]
+// CHECK:         %[[EMPTY:.+]] = tensor.empty() : tensor<32x8x4x2xf32>
+// CHECK:         %[[PACK:.+]] = linalg.pack %[[ARG0]]
+// CHECK-SAME:      outer_dims_perm = [1, 0] inner_dims_pos = [0, 1] inner_tiles = [4, 2] into %[[EMPTY]]
+// CHECK-SAME:      : tensor<32x64xf32> -> tensor<32x8x4x2xf32>
+// CHECK:         %[[EXPANDED:.+]] = tensor.expand_shape %[[PACK]] {{\[}}[0], [1, 2], [3], [4]]
+// CHECK-SAME:      output_shape [32, 4, 2, 4, 2] : tensor<32x8x4x2xf32> into tensor<32x4x2x4x2xf32>
+// CHECK:         return %[[EXPANDED]] : tensor<32x4x2x4x2xf32>
+
+// -----
+
+func.func @no_bubble_up_pack_outer_dims_permutation_through_expand(%arg0: tensor<32x64xf32>) -> tensor<2x4x32x4x2xf32> {
+  %empty = tensor.empty() : tensor<2x4x32x4x2xf32>
+  %expanded = tensor.expand_shape %arg0 [[0, 1], [2]] output_shape [4, 8, 64] : tensor<32x64xf32> into tensor<4x8x64xf32>
+  %pack = linalg.pack %expanded outer_dims_perm = [1, 0, 2] inner_dims_pos = [1, 2] inner_tiles = [4, 2] into %empty : tensor<4x8x64xf32> -> tensor<2x4x32x4x2xf32>
+  return %pack : tensor<2x4x32x4x2xf32>
+}
 // CHECK-LABEL: func.func @no_bubble_up_pack_outer_dims_permutation_through_expand(
 // CHECK-SAME:      %[[ARG0:[a-zA-Z0-9]+]]
-// CHECK:         %[[EMPTY:.+]] = tensor.empty() : tensor<32x4x2x4x2xf32>
+// CHECK:         %[[EMPTY:.+]] = tensor.empty() : tensor<2x4x32x4x2xf32>
 // CHECK:         %[[EXPANDED:.+]] = tensor.expand_shape %[[ARG0]] {{\[}}[0, 1], [2]]
 // CHECK-SAME:      output_shape [4, 8, 64] : tensor<32x64xf32> into tensor<4x8x64xf32>
 // CHECK:         %[[PACK:.+]] = linalg.pack %[[EXPANDED]]
-// CHECK-SAME:      outer_dims_perm = [2, 0, 1] inner_dims_pos = [1, 2] inner_tiles = [4, 2] into %[[EMPTY]]
-// CHECK-SAME:      : tensor<4x8x64xf32> -> tensor<32x4x2x4x2xf32>
-// CHECK:         return %[[PACK]] : tensor<32x4x2x4x2xf32>
+// CHECK-SAME:      outer_dims_perm = [1, 0, 2] inner_dims_pos = [1, 2] inner_tiles = [4, 2] into %[[EMPTY]]
+// CHECK-SAME:      : tensor<4x8x64xf32> -> tensor<2x4x32x4x2xf32>
+// CHECK:         return %[[PACK]] : tensor<2x4x32x4x2xf32>
 
 // -----
 
